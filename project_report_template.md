@@ -1,61 +1,52 @@
 # Cloud Computing Project Report
-**Project Title:** Scalable Web Application Deployment on AWS
+**Project Title:** Live Streaming Infrastructure on AWS
 **Student Name:** [Your Name]
 **Date:** [Date]
 
 ---
 
 ## 1. Executive Summary
-*Briefly describe the project goal: deploying a WordPress blog using AWS Free Tier services to demonstrate cloud architecture skills.*
+*Briefly describe the project goal: deploying a custom Live Streaming server using NGINX and RTMP on AWS EC2 to broadcast real-time video.*
 
 ## 2. Architecture Design
 ![Architecture Diagram](./architecture_diagram.md)
-*Insert your Mermaid diagram or a screenshot of it here.*
+*Insert the Mermaid diagram or a screenshot of it here.*
 
 **Components Used:**
-- **EC2:** Web server hosting WordPress.
-- **RDS:** Managed MySQL database for data persistence.
-- **S3:** Object storage for media files.
-- **CloudFront:** CDN for fast content delivery.
-- **CloudWatch:** Monitoring system health.
+- **EC2 (t2.micro):** The core server hosting the streaming engine.
+- **NGINX + RTMP Module:** Open-source software compiled to handle video streams.
+- **OBS Studio:** The broadcasting client pushing video to the cloud.
+- **HLS (HTTP Live Streaming):** Protocol used to deliver video to web browsers.
 
 ## 3. Implementation Steps
 
 ### 3.1 Network & Security
 *Describe the Security Groups created.*
-- **Web SG:** Allowed HTTP/HTTPS/SSH.
-- **DB SG:** Allowed MySQL only from Web SG.
+- **Port 1935 (RTMP):** Opened to allow the video stream upload from OBS.
+- **Port 80 (HTTP):** Opened to allow users to view the player.
+- **Port 22 (SSH):** Opened for server administration.
+*Screenshot of Security Group Rules.*
+![Security Group Screenshot](path/to/screenshot)
 
-### 3.2 Database Deployment (RDS)
-*Screenshot of RDS Dashboard showing the active database.*
-![RDS Screenshot](path/to/screenshot)
+### 3.2 Server Configuration
+*Describe the installation process.*
+- Launched Amazon Linux 2023.
+- Compiled NGINX from source code to include the RTMP module.
+- Configured `nginx.conf` to ingest RTMP and output HLS.
 
-### 3.3 Web Server Deployment (EC2)
-*Screenshot of EC2 Dashboard showing the running instance.*
-![EC2 Screenshot](path/to/screenshot)
+### 3.3 Broadcasting (The Input)
+*Screenshot of OBS Studio showing the "Streaming" status and connection to the EC2 IP.*
+![OBS Screenshot](path/to/screenshot)
 
-### 3.4 WordPress Configuration
-*Describe how you connected WordPress to RDS.*
-*Screenshot of the WordPress Admin Dashboard.*
-![WP Admin Screenshot](path/to/screenshot)
+### 3.4 Playback (The Output)
+*Screenshot of the web browser playing the live video from the EC2 server.*
+![Browser Screenshot](path/to/screenshot)
 
-### 3.5 Storage & CDN (S3 + CloudFront)
-*Explain the offloading of media.*
-*Screenshot of an image URL showing the CloudFront domain.*
-![CDN Screenshot](path/to/screenshot)
+## 4. Challenges & Solutions
+- **Challenge:** NGINX does not support RTMP by default.
+- **Solution:** Had to download the source code and the `nginx-rtmp-module` and compile them manually using `make`.
+- **Challenge:** Latency (Delay).
+- **Solution:** Tuned HLS fragment size to 3 seconds to reduce delay while maintaining stability.
 
-## 4. Monitoring & Optimization
-### 4.1 CloudWatch Metrics
-*Screenshot of the CloudWatch Dashboard.*
-![CloudWatch Screenshot](path/to/screenshot)
-
-### 4.2 Optimization Suggestions
-- **Caching:** Implement W3 Total Cache on WordPress.
-- **Auto Scaling:** Create an Auto Scaling Group (ASG) to handle traffic spikes (future improvement).
-- **Security:** Move RDS to a private subnet (requires NAT Gateway, which costs money, so skipped for Free Tier).
-
-## 5. Challenges & Solutions
-*List any issues faced (e.g., database connection errors) and how you solved them.*
-
-## 6. Conclusion
-*Final thoughts on the project and what was learned about AWS.*
+## 5. Conclusion
+*Final thoughts on the project. Discuss how this demonstrates "Infrastructure as a Service" (IaaS) by building a custom solution from scratch rather than using a managed service.*

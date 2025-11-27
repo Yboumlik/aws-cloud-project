@@ -1,42 +1,38 @@
-# AWS Cloud Architecture for WordPress
+# Architecture Diagram: AWS Live Streaming
 
 ```mermaid
-graph TD
-    User((User))
-    
-    subgraph "AWS Cloud"
-        CloudFront(CloudFront CDN)
-        
-        subgraph "VPC"
-            ALB(Application Load Balancer)
-            
-            subgraph "Public Subnet"
-                EC2(EC2 Instance\nWordPress Web Server)
-            end
-            
-            subgraph "Private Subnet (Logical)"
-                RDS[(RDS MySQL Database)]
-            end
-        end
-        
-        S3[S3 Bucket\nMedia Storage]
-        CW(CloudWatch\nMonitoring)
+graph LR
+    subgraph "Your Local Environment"
+        OBS[OBS Studio<br/>(Broadcaster)]
+        Laptop[Your Laptop]
     end
 
-    User -->|HTTPS| CloudFront
-    CloudFront -->|HTTP/HTTPS| ALB
-    ALB -->|HTTP| EC2
-    EC2 -->|SQL| RDS
-    EC2 -->|Offload Media| S3
-    CloudFront -->|Cache Media| S3
-    CW -.->|Monitor| EC2
-    CW -.->|Monitor| RDS
-```
+    subgraph "AWS Cloud (Region: us-east-1)"
+        subgraph "VPC"
+            subgraph "Public Subnet"
+                EC2[EC2 Instance<br/>(NGINX + RTMP Module)]
+            end
+            SG[Security Group<br/>Ports: 22, 80, 1935]
+        end
+    end
 
-## Description
-1.  **User** accesses the blog via CloudFront (CDN) for low latency.
-2.  **CloudFront** serves cached content and routes dynamic requests to the Load Balancer (or directly to EC2 if no ALB is used in strict Free Tier minimal setup, though ALB is good practice). *Note: For strict Free Tier cost avoidance, you might skip ALB and go CloudFront -> EC2 Elastic IP, but ALB is shown for architectural completeness.*
-3.  **EC2 Instance** hosts the WordPress application (Apache/Nginx + PHP).
-4.  **RDS** hosts the MySQL database, ensuring data persistence separate from the web server.
-5.  **S3** stores media uploads (images/videos) to offload storage from EC2 and allow cheaper scaling.
-6.  **CloudWatch** monitors CPU, memory, and disk usage of EC2 and RDS.
+    subgraph "Users / Classmates"
+        User1[User 1<br/>(Browser)]
+        User2[User 2<br/>(Browser)]
+    end
+
+    %% Data Flow
+    OBS -- "RTMP Stream (Port 1935)" --> EC2
+    EC2 -- "Converts to HLS (.m3u8 + .ts)" --> EC2
+    User1 -- "HTTP Request (Port 80)" --> EC2
+    User2 -- "HTTP Request (Port 80)" --> EC2
+
+    %% Styling
+    classDef aws fill:#FF9900,stroke:#232F3E,stroke-width:2px,color:white;
+    classDef local fill:#3F8624,stroke:#232F3E,stroke-width:2px,color:white;
+    classDef user fill:#0073BB,stroke:#232F3E,stroke-width:2px,color:white;
+
+    class EC2,SG aws;
+    class OBS,Laptop local;
+    class User1,User2 user;
+```
